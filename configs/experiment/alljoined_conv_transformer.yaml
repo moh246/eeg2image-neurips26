@@ -1,0 +1,11 @@
+_base_: [../data/alljoined16m_split.yaml, ../train/contrastive.yaml, ../model/conv_transformer.yaml]
+name: alljoined_conv_transformer
+seed: 0
+device: auto
+eval:
+  batch_size: 2048
+  top_k: 5
+  max_train_events: 20000
+tracking:
+  root: experiments
+output_root: outputs

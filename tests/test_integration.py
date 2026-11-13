@@ -82,3 +82,21 @@ def test_gradient_training_is_reproducible(tmp_path):
     first = _run("smoke_conv", tmp_path / "a", *args)["summary"]["val"]
     again = _run("smoke_conv", tmp_path / "b", *args)["summary"]["val"]
     assert first == again
+
+
+@pytest.mark.parametrize("model", ["conv_transformer", "conv_transformer_causal",
+                                   "channel_transformer"])  # fmt: skip
+def test_transformer_models_train_and_package(tmp_path, model):
+    record = _run(
+        "smoke_conv", tmp_path, f"name=smoke_{model}", "train.epochs=2", "train.batch_size=64",
+        "model.name=" + ("channel_transformer" if model == "channel_transformer"
+                         else "conv_transformer"),
+        "model.params={d_model: 32, n_layers: 2, n_heads: 2"
+        + (", patch_size: 10}" if model == "channel_transformer"
+           else ", attention: " + ("causal" if model.endswith("causal") else "bidirectional")
+           + ", n_filters: 16, temporal_kernel: 7, pool_kernel: 6, pool_stride: 3}"),
+    )  # fmt: skip
+    summary = record["summary"]
+    assert summary["fit"]["steps"] == summary["fit"]["total_steps"]
+    assert summary["package_parity_max_abs_diff"] < 1e-5
+    assert summary["contract_check_ok"] is True

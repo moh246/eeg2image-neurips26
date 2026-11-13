@@ -1,0 +1,12 @@
+# Montage-agnostic transformer over (electrode, time-patch) tokens with 3-D position embeddings.
+model:
+  name: channel_transformer
+  params:
+    d_model: 128
+    patch_size: 15
+    n_layers: 4
+    n_heads: 4
+    attn_dropout: 0.1
+    token_dropout: 0.1
+    head_dropout: 0.5
+  normalize_output: true

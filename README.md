@@ -7,10 +7,11 @@ Brain & Body Workshop challenge. Given one second of 32-channel EEG recorded whi
 looked at an image, predict that image's frozen DINOv2-giant embedding; the platform ranks a
 held-out gallery by cosine similarity and scores Top-5 accuracy.
 
-**Status: milestones M0-M1 done, M2 code complete.** The scorer, packaging, CI, the real-data
-pipeline and the contrastive training loop are in place, and the preprocessing is verified
-against the organisers' code on real recordings. No model has been trained on the full
-dataset yet, so there is no leaderboard number to report.
+**Status: all code through M4 is written and tested; no real results yet.** The scorer,
+packaging, CI, real-data pipeline, training loop and every model are in place, and the
+preprocessing is verified against the organisers' code on real recordings. Nothing has been
+trained on the full dataset yet (that runs on Colab), so there is no leaderboard number and
+no ablation result to report.
 Results will be added to [Results](#results) as they are produced.
 
 ## The task, as verified
@@ -67,7 +68,8 @@ src/eeg2img/
   contract.py   the verified I/O contract as constants
   metrics.py    replica of the competition scorer
   data/         Alljoined-1.6M reader, preprocessing, on-disk store, targets, synthetic data
-  models/       model registry: floors, EEGNet, conv tokenizer + contrastive baseline
+  models/       model registry: floors, EEGNet, conv baseline, transformer encoders
+  montage.py    standard 3-D electrode positions for the position-aware embedding
   engine/       contrastive loss, resumable training loop, closed-form floors, evaluation
   submission/   single-file packager, inference runtime, local contract check
   tracking.py   per-run records: config, git commit, metrics
@@ -78,6 +80,27 @@ tests/          unit, regression and integration tests
 experiments/    committed run records and the run registry
 data/           provenance notes only; data is never committed
 ```
+
+## Models
+
+All models map `(B, 32, 120)` EEG to a 1536-d embedding and are trained with a contrastive
+loss against the frozen image embeddings. Each config under `configs/model/` is one row of the
+planned comparison:
+
+| Config | What it is | Question it answers |
+|---|---|---|
+| `mean`, `ridge` | Constant and linear floors | Is the pipeline sound; does anything beat a linear map? |
+| `eegnet` | The organisers' reference CNN, reimplemented | Do we reproduce the reference level? |
+| `conv` | Temporal-spatial conv tokens, flattened and projected | CNN + contrastive baseline |
+| `conv_transformer` | Same tokenizer, transformer over the tokens | Does a sequence-transformer head beat the CNN head? |
+| `conv_transformer_causal` | Same, causal attention, predicts from the latest token | Does a language-model-style decoder head help? |
+| `channel_transformer` | Tokens per (electrode, time patch) with 3-D position embeddings | Can a montage-agnostic encoder use other layouts? |
+
+`conv`, `conv_transformer` and `conv_transformer_causal` share one tokenizer and differ only
+in the head, so that comparison isolates the head. `channel_transformer` has no weight that
+depends on the number or order of channels: the same checkpoint runs on 63 or 32 electrodes,
+and the packaged model uses whichever input electrodes have a known position. Whether either
+transformer actually helps is an open question until the runs are in.
 
 ## How results stay trustworthy
 
@@ -120,6 +143,6 @@ baseline, a CNN + contrastive baseline, and the transformer-head ablation, each 
 | M0 | Repo, CI, scorer replica, submission packager, contract checks | done |
 | M1 | Alljoined-1.6M pipeline with a parity test against NeuralBench; DINOv2-giant targets | done (full-dataset run on Colab pending) |
 | M2 | CNN + contrastive baseline and EEGNet on the same split | code done; training runs on Colab pending |
-| M3 | Electrode-position-aware channel embedding; channel-dropout and 63→32 transfer tests | |
-| M4 | Transformer encoder; pooled-CNN head vs transformer over EEG latent tokens, 3 seeds | |
+| M3 | Electrode-position-aware channel embedding; channel-dropout and 63→32 transfer tests | model done; transfer experiments pending |
+| M4 | Transformer encoder; pooled-CNN head vs transformer over EEG latent tokens, 3 seeds | models done; runs pending |
 | M5 | Final training, sealed submissions, one-page report | |

@@ -1,0 +1,14 @@
+_base_: [../data/alljoined16m_split.yaml, ../train/contrastive.yaml, ../model/channel_transformer.yaml]
+name: alljoined_channel_transformer
+seed: 0
+device: auto
+eval:
+  batch_size: 1024
+  top_k: 5
+  max_train_events: 20000
+tracking:
+  root: experiments
+output_root: outputs
+train:
+  batch_size: 512        # 256 tokens per epoch; halve the batch to fit a T4
+  eval_batch_size: 1024

@@ -1,0 +1,17 @@
+# Transformer-head ablation: the tokenizer of model/conv.yaml, with the flatten-and-project
+# head replaced by a transformer that reads tokens left to right and predicts from the latest one, like a language-model decoder.
+model:
+  name: conv_transformer
+  params:
+    d_model: 128
+    n_filters: 40
+    temporal_kernel: 25
+    pool_kernel: 15
+    pool_stride: 5
+    dropout: 0.25
+    n_layers: 4
+    n_heads: 4
+    attention: causal
+    attn_dropout: 0.1
+    head_dropout: 0.5
+  normalize_output: true
