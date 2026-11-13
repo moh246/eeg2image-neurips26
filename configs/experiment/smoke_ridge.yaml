@@ -1,0 +1,10 @@
+_base_: [../data/synthetic.yaml, ../model/ridge.yaml]
+name: smoke_ridge
+seed: 0
+device: cpu
+eval:
+  batch_size: 256
+  top_k: 5
+tracking:
+  root: experiments
+output_root: outputs

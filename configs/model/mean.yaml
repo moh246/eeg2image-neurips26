@@ -1,0 +1,6 @@
+# Constant floor: predicts the mean training embedding (retrieval chance).
+model:
+  name: mean
+  params: {}
+  normalize_output: false
+fit: {}

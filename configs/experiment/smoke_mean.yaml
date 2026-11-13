@@ -1,0 +1,10 @@
+_base_: [../data/synthetic.yaml, ../model/mean.yaml]
+name: smoke_mean
+seed: 0
+device: cpu
+eval:
+  batch_size: 256
+  top_k: 5
+tracking:
+  root: experiments
+output_root: outputs

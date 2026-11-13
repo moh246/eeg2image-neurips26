@@ -1,0 +1,20 @@
+# Synthetic contract-shaped data: no download, used for smoke tests and CI.
+data:
+  name: synthetic
+  params:
+    n_subjects: 6
+    n_images: 80
+    n_repeats: 4
+    n_chans: 32
+    n_times: 120
+    embed_dim: 64
+    latent_dim: 8
+    noise: 20.0
+    seed: 0
+
+# Test epochs come only from held-out subjects viewing held-out images,
+# which is the generalisation shift of the sealed evaluation.
+split:
+  holdout_subjects: [4, 5]
+  holdout_image_fraction: 0.25
+  seed: 33

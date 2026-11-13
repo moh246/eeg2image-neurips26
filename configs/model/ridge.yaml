@@ -1,0 +1,7 @@
+# Linear floor: closed-form ridge from the flattened epoch to the embedding.
+model:
+  name: ridge
+  params: {}
+  normalize_output: true
+fit:
+  alpha: 1000.0
