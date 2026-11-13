@@ -1,0 +1,12 @@
+# CNN + contrastive baseline: temporal-spatial conv tokens, flattened and projected.
+model:
+  name: conv
+  params:
+    d_model: 128
+    n_filters: 40
+    temporal_kernel: 25
+    pool_kernel: 15
+    pool_stride: 5
+    dropout: 0.25
+    head_dropout: 0.5
+  normalize_output: true

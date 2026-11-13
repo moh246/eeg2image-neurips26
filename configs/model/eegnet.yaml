@@ -1,0 +1,10 @@
+# The organisers' reference architecture (EEGNet-v4), reimplemented in plain torch.
+model:
+  name: eegnet
+  params:
+    f1: 8
+    depth: 2
+    f2: 16
+    kernel_length: 60
+    dropout: 0.25
+  normalize_output: true

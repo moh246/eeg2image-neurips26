@@ -27,6 +27,7 @@ from eeg2img.submission.runtime import PACKAGE_CONFIG, PACKAGE_WEIGHTS
 INLINE_MODULES: tuple[str, ...] = (
     "eeg2img.channels",
     "eeg2img.models.floor",
+    "eeg2img.models.conv",
     "eeg2img.models",
     "eeg2img.submission.runtime",
 )

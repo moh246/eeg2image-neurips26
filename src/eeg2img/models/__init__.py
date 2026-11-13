@@ -11,9 +11,12 @@ from __future__ import annotations
 
 from torch import nn
 
+from eeg2img.models.conv import ConvEncoder, EEGNet
 from eeg2img.models.floor import MeanEmbedding, RidgeProbe
 
 MODEL_REGISTRY: dict[str, type[nn.Module]] = {
+    "conv": ConvEncoder,
+    "eegnet": EEGNet,
     "mean": MeanEmbedding,
     "ridge": RidgeProbe,
 }
