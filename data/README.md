@@ -21,29 +21,76 @@ method description; this table is that declaration and must be kept current.
 ## From raw EEG to model input
 
 The model input is defined by the organisers' NeuralBench 0.4.0 image task
-(`defaults/eeg/config.yaml` and `tasks/eeg/image/config.yaml`). Reading those configs gives:
+(`defaults/eeg/config.yaml`, `tasks/eeg/image/config.yaml`) as executed by
+`neuralset.extractors.neuro.MneRaw`. This repository reimplements it in
+[`src/eeg2img/data/preprocess.py`](../src/eeg2img/data/preprocess.py).
 
-1. Pick EEG channels; the Emotiv recordings mark all 32 as EEG.
-2. Band-pass 0.1–75 Hz. At the 120 Hz target rate the 75 Hz edge is above Nyquist, and the
-   organisers' loader drops it, leaving a 0.1 Hz high-pass.
-3. Notch at 50 and 60 Hz.
+Per recording, on the continuous signal:
+
+1. Keep the EEG channels (all 32 Emotiv channels).
+2. Notch-filter 50 and 60 Hz and their harmonics below Nyquist (50, 60, 100, 120 Hz at the
+   native 256 Hz), zero-phase FIR.
+3. Band-pass 0.1–75 Hz at the native rate, MNE default zero-phase FIR. The low-pass edge is
+   skipped only for recordings whose Nyquist frequency is at or below 75 Hz.
 4. Resample to 120 Hz.
-5. Epoch from −0.2 s to +0.8 s around each image onset: 120 samples.
-6. Baseline-correct using the first 0.2 s of the epoch.
-7. Robust scaling.
+5. Robust-scale each channel over the whole recording (subtract the median, divide by the
+   interquartile range).
+
+Per image event:
+
+6. Cut 120 samples starting at `round((onset − 0.2 s) × 120)`.
+7. Subtract each channel's mean over the first 0.2 s (24 samples) of the window.
 8. Clip to ±20.
 
-Events that share an onset timestamp are dropped as ambiguous, following the organisers' reader.
+Event selection follows the organisers' reader: markers that share an onset timestamp are
+dropped as ambiguous, markers without a stimulus file are dropped, and only `stim_train` and
+`stim_test` trials are kept.
 
-**Status.** Steps 1–8 are transcribed from the configs. The exact semantics of steps 6 and 7
-(per channel, per recording or per epoch) are not yet confirmed from the extractor source. The
-M1 pipeline will settle them with a parity test that compares this repository's output against
-NeuralBench's on the same recording, and this section will then be updated to state them.
+### Verified against the organisers' code
+
+`tests/test_preprocess_parity.py` runs the organisers' reader and extractor and this
+repository's pipeline on the same real recordings and compares the results. On
+`sub-01/ses-01` runs 1 and 2 (2,028 epochs, 13 Nov 2026, mne 1.13.2):
+
+| Stage | Result |
+|---|---|
+| Event selection (onsets, stimulus files, labels) | identical |
+| Continuous signal after steps 1–5 | identical (max abs difference 0.0) |
+| Epochs after steps 6–8 | max abs difference 3.8e-6 |
+
+One behaviour of the organisers' slicing is reproduced deliberately. When a window start
+falls exactly on a half sample (33 of the 2,028 epochs, 1.6%), their code returns 119 samples
+behind one leading zero, with a 23-sample baseline. The sealed inputs are produced by the
+same code, so training data keeps this quirk rather than "fixing" it.
+
+Reproduce with `make setup-official && ALLJOINED_ACCEPT_LICENCE=1 make parity` (downloads
+10 MB). The test needs real data, which cannot be redistributed, so it does not run in CI.
+
+### Storage
+
+The full dataset as individual epochs would be about 25 GB. Because consecutive epochs
+overlap, the store keeps each preprocessed recording once as float16 plus an integer index of
+every epoch's samples (about 3.6 GB), and cuts epochs on the fly. float16 rounding changes
+epoch values by less than 0.02 on a signal of unit scale (`tests/test_store.py`).
+
+### Preparing the data
+
+On Colab, run [`notebooks/colab_prepare_data.ipynb`](../notebooks/colab_prepare_data.ipynb).
+Locally (about 12 GB of disk):
+
+```bash
+ALLJOINED_ACCEPT_LICENCE=1 .venv/bin/python scripts/prepare_alljoined.py   # EEG store
+.venv/bin/python scripts/embed_images.py --device cuda                      # image targets
+```
 
 ## Targets
 
-Image embeddings come from `facebook/dinov2-giant` at 518 px: the hidden state at 2/3 depth,
-averaged over tokens, giving 1536 dimensions. They are computed once per unique image and cached.
+Image embeddings are 1536-dimensional `facebook/dinov2-giant` features: the hidden state at
+2/3 depth, averaged over tokens. `scripts/embed_images.py` computes them by calling the
+organisers' own extractor (`neuralset.extractors.image.HuggingFaceImage`, neuralset 0.4.0) with
+the parameters of the NeuralBench image task, rather than a reimplementation, so the targets
+are produced by the same code as the competition gallery. The table is computed once per
+unique stimulus and stored next to the EEG store as `embeddings.npy`.
 
 ## Channel order
 

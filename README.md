@@ -7,9 +7,10 @@ Brain & Body Workshop challenge. Given one second of 32-channel EEG recorded whi
 looked at an image, predict that image's frozen DINOv2-giant embedding; the platform ranks a
 held-out gallery by cosine similarity and scores Top-5 accuracy.
 
-**Status: milestone M0 of 5.** The pipeline, scorer, packaging and CI are in place and run end
-to end on synthetic data. No model has been trained on real EEG yet, so there is no leaderboard
-number to report. Results will be added to [Results](#results) as they are produced.
+**Status: milestones M0 and M1 of 5.** The scorer, packaging, CI and the real-data pipeline are
+in place, and the preprocessing is verified against the organisers' code on real recordings.
+No model has been trained on real EEG yet, so there is no leaderboard number to report.
+Results will be added to [Results](#results) as they are produced.
 
 ## The task, as verified
 
@@ -62,13 +63,14 @@ configs/        YAML only; every hyperparameter lives here (data/, model/, exper
 src/eeg2img/
   contract.py   the verified I/O contract as constants
   metrics.py    replica of the competition scorer
-  data/         epoch container, synthetic generator (real-data pipeline: M1)
+  data/         Alljoined-1.6M reader, preprocessing, on-disk store, targets, synthetic data
   models/       model registry (floors now; encoders from M2)
   engine/       fitting and evaluation
   submission/   single-file packager, inference runtime, local contract check
   tracking.py   per-run records: config, git commit, metrics
   pipeline.py   train -> evaluate -> package, shared by every entry point
-scripts/        thin CLI wrappers: train, check_submission, replay_in_starter_kit
+scripts/        thin CLI wrappers: prepare_alljoined, embed_images, train, check_submission
+notebooks/      Colab launcher for the scripts; no logic of its own
 tests/          unit, regression and integration tests
 experiments/    committed run records and the run registry
 data/           provenance notes only; data is never committed
@@ -76,6 +78,9 @@ data/           provenance notes only; data is never committed
 
 ## How results stay trustworthy
 
+- **Preprocessing parity.** Training inputs are produced by a reimplementation of the
+  organisers' pipeline that matches their extractor on real recordings to 4e-6
+  (see [`data/README.md`](data/README.md)).
 - **Scorer parity.** `metrics.py` reproduces the organisers' objective, and CI checks it against
   their actual implementation (starter kit pinned by commit) on random and degenerate inputs.
 - **The uploaded artefact is the measured model.** Every run packages its model, reloads the
@@ -107,8 +112,8 @@ baseline, a CNN + contrastive baseline, and the transformer-head ablation, each 
 | | Milestone | Status |
 |---|---|---|
 | M0 | Repo, CI, scorer replica, submission packager, contract checks | done |
-| M1 | Alljoined-1.6M pipeline with a parity test against NeuralBench; DINOv2-giant targets | next |
-| M2 | CNN + contrastive baseline and the official EEGNet on the same split | |
+| M1 | Alljoined-1.6M pipeline with a parity test against NeuralBench; DINOv2-giant targets | done (full-dataset run on Colab pending) |
+| M2 | CNN + contrastive baseline and the official EEGNet on the same split | next |
 | M3 | Electrode-position-aware channel embedding; channel-dropout and 63→32 transfer tests | |
 | M4 | Transformer encoder; pooled-CNN head vs transformer over EEG latent tokens, 3 seeds | |
 | M5 | Final training, sealed submissions, one-page report | |

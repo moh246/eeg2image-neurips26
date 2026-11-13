@@ -9,15 +9,15 @@ KIT_REPO   := https://github.com/neural-interfaces26/2026-competition.git
 KIT_COMMIT := bddaff3dc6bd4b7300d531797685279a22c7bbf9
 KIT_DIR    := .cache/starter-kit
 
-.PHONY: setup setup-official lint format test check train contract-replay clean
+.PHONY: setup setup-official lint format test check train contract-replay parity data clean
 
 setup:  ## create the virtualenv and install the package with dev tools
 	$(PYTHON) -m venv $(VENV)
 	$(BIN)/python -m pip install --upgrade pip
-	$(BIN)/python -m pip install -e ".[dev]"
+	$(BIN)/python -m pip install -e ".[dev,data]"
 
 setup-official:  ## add the organisers' pinned stack (large; needed for contract-replay)
-	$(BIN)/python -m pip install -e ".[dev,data,official]"
+	$(BIN)/python -m pip install -e ".[dev,data,targets,official]"
 
 lint:  ## static checks, as run in CI
 	$(BIN)/ruff check .
@@ -42,6 +42,14 @@ $(KIT_DIR):
 contract-replay: $(KIT_DIR)  ## score parity with, and replay through, the organisers' code
 	STARTER_KIT_DIR=$(KIT_DIR) $(BIN)/python -m pytest -m official -v
 	$(BIN)/python scripts/replay_in_starter_kit.py --kit $(KIT_DIR)
+
+parity:  ## compare our preprocessing with the organisers' extractor on two real recordings
+	$(BIN)/python scripts/prepare_alljoined.py --download-only --no-stimuli \
+		"data.subjects=[1]" "data.sessions=[1]" "data.runs=[1, 2]"
+	$(BIN)/python -m pytest tests/test_preprocess_parity.py -v
+
+data:  ## download and preprocess all of Alljoined-1.6M (about 12 GB of disk; see data/README.md)
+	$(BIN)/python scripts/prepare_alljoined.py --config configs/data/alljoined16m.yaml
 
 clean:
 	rm -rf .pytest_cache .ruff_cache outputs
