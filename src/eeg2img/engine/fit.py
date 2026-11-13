@@ -1,7 +1,6 @@
-"""Model fitting.
+"""Closed-form fitting of the reference floors.
 
-The floors have closed-form solutions. Gradient-trained models are dispatched
-from :func:`fit_model` as they are added, so scripts never branch on model type.
+Gradient-trained models go through :mod:`eeg2img.engine.train` instead.
 """
 
 from __future__ import annotations
@@ -15,6 +14,9 @@ from torch import nn
 
 from eeg2img.data.epochs import EpochSet
 from eeg2img.models.floor import MeanEmbedding, RidgeProbe
+
+#: Registry names of the models fitted here rather than by gradient descent.
+CLOSED_FORM_MODELS = frozenset({"mean", "ridge"})
 
 
 def fit_mean(model: MeanEmbedding, train: EpochSet) -> dict[str, float]:
