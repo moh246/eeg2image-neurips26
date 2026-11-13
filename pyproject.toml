@@ -20,6 +20,7 @@ data = [
     "mne>=1.8",
     "nemar-py>=0.3.1",
     "scipy>=1.11",
+    "tqdm>=4.66",
 ]
 # Frozen DINOv2 targets, computed with the organisers' own extractor (GPU recommended).
 targets = [

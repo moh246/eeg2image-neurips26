@@ -21,7 +21,7 @@ def _recording(name: str, subject: int, seed: int) -> ProcessedRecording:
     rng = np.random.default_rng(seed)
     continuous = (3.0 * rng.standard_normal((3, 4000))).astype(np.float32)
     onsets = np.sort(rng.uniform(1.0, 30.0, size=25))
-    onsets[3] = 10.0625 + 0.2  # a half-sample tie, to exercise the padded path
+    onsets[3] = 3.0625  # a half-sample tie, to exercise the padded path
     stims = [f"{int(i)}.jpg" for i in rng.integers(0, 12, size=25)]
     return ProcessedRecording(name, subject, 1, 1, continuous, np.sort(onsets), stims,
                               [s in ("0.jpg", "1.jpg") for s in stims], CH)  # fmt: skip
@@ -48,6 +48,7 @@ def test_store_round_trip_matches_direct_extraction(built):
                              for r in recordings.values()])  # fmt: skip
     got = store.epochs(np.arange(len(store)))
     assert got.dtype == np.float32 and got.shape == direct.shape
+    assert (store.plan[:, 2] != 0).any(), "no padded tie-case epoch in the fixture"
     # float16 storage: error stays far below the unit noise scale.
     assert np.abs(got - direct).max() < 0.02
     assert np.corrcoef(got.ravel(), direct.ravel())[0, 1] > 0.999999
