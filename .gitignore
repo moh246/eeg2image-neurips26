@@ -1,0 +1,21 @@
+# environments / caches
+.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.coverage
+.cache/
+.DS_Store
+
+# data is never committed; see data/README.md for provenance
+data/*
+!data/README.md
+
+# heavy run artifacts (checkpoints, submission ZIPs); small run records live in experiments/
+outputs/
+*.pt
+*.ckpt
+*.zip
+wandb/

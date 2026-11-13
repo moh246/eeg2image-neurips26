@@ -1,0 +1,62 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "eeg2img"
+version = "0.1.0"
+description = "EEG-to-image retrieval for the EEG/EMG Foundation Challenge 2026, Track 01"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "numpy>=1.26",
+    "pyyaml>=6.0",
+    "torch>=2.5.1",
+]
+
+[project.optional-dependencies]
+# Raw EEG -> model input, and the frozen DINOv2 targets.
+data = [
+    "mne>=1.8",
+    "nemar-py>=0.3.1",
+    "pillow>=10",
+    "scipy>=1.11",
+    "transformers>=4.44",
+]
+# The organisers' pinned stack, used for parity tests and the local contract replay.
+official = [
+    "benchopt>=1.10",
+    "braindecode>=1.0",
+    "neuralbench==0.4.0",
+    "neuralfetch==0.4.0",
+    "neuralset==0.4.0",
+    "neuraltrain==0.4.0",
+]
+dev = [
+    "pytest>=8",
+    "pytest-cov>=5",
+    "ruff>=0.6",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra --strict-markers"
+markers = [
+    "integration: end-to-end train/eval/package loop on synthetic data",
+    "official: needs the organisers' stack (pip install -e '.[official]')",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+src = ["src", "tests", "scripts"]
+extend-exclude = [".cache"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "NPY", "RUF"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["eeg2img"]
