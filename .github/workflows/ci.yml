@@ -1,0 +1,44 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          # CPU-only torch keeps the runner small; the package itself is device-agnostic.
+          python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
+          python -m pip install -e ".[dev]"
+
+      - name: Lint
+        run: |
+          ruff check .
+          ruff format --check .
+
+      - name: Fetch the organisers' starter kit (pinned)
+        run: |
+          git clone --quiet https://github.com/neural-interfaces26/2026-competition.git .cache/starter-kit
+          git -C .cache/starter-kit checkout --quiet bddaff3dc6bd4b7300d531797685279a22c7bbf9
+
+      - name: Test
+        env:
+          STARTER_KIT_DIR: .cache/starter-kit
+        run: python -m pytest --cov=eeg2img --cov-report=term-missing
