@@ -77,5 +77,6 @@ def test_ridge_output_regression(small_epochs):
     np.testing.assert_allclose(out[0, :3], RIDGE_REFERENCE, rtol=1e-3, atol=1e-4)
 
 
-#: First three outputs for epoch 0 of the fixture, from the run that introduced this test.
-RIDGE_REFERENCE = [0.50252, 2.50858, -0.77687]
+#: First three outputs for epoch 0 of the fixture. Re-pinned when the split moved to
+#: ``data.source.make_splits``, which selects held-out images with a different generator.
+RIDGE_REFERENCE = [1.04266, 0.51868, 0.06155]

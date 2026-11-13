@@ -7,9 +7,10 @@ Brain & Body Workshop challenge. Given one second of 32-channel EEG recorded whi
 looked at an image, predict that image's frozen DINOv2-giant embedding; the platform ranks a
 held-out gallery by cosine similarity and scores Top-5 accuracy.
 
-**Status: milestones M0 and M1 of 5.** The scorer, packaging, CI and the real-data pipeline are
-in place, and the preprocessing is verified against the organisers' code on real recordings.
-No model has been trained on real EEG yet, so there is no leaderboard number to report.
+**Status: milestones M0-M1 done, M2 code complete.** The scorer, packaging, CI, the real-data
+pipeline and the contrastive training loop are in place, and the preprocessing is verified
+against the organisers' code on real recordings. No model has been trained on the full
+dataset yet, so there is no leaderboard number to report.
 Results will be added to [Results](#results) as they are produced.
 
 ## The task, as verified
@@ -50,7 +51,9 @@ make train     # smoke experiment on synthetic data: train, score, package, cont
 ```
 
 `make train` prints the run id, the Top-5 scores and the path of a ready-to-upload
-`submission.zip`. Any config value can be overridden on the command line:
+`submission.zip`. Real experiments are `configs/experiment/alljoined_*.yaml`; they need the
+prepared data (see [Data](#data)) and are launched on Colab with
+[`notebooks/colab_train.ipynb`](notebooks/colab_train.ipynb). Any config value can be overridden on the command line:
 
 ```bash
 .venv/bin/python scripts/train.py --config configs/experiment/smoke_ridge.yaml fit.alpha=10 seed=1
@@ -64,8 +67,8 @@ src/eeg2img/
   contract.py   the verified I/O contract as constants
   metrics.py    replica of the competition scorer
   data/         Alljoined-1.6M reader, preprocessing, on-disk store, targets, synthetic data
-  models/       model registry (floors now; encoders from M2)
-  engine/       fitting and evaluation
+  models/       model registry: floors, EEGNet, conv tokenizer + contrastive baseline
+  engine/       contrastive loss, resumable training loop, closed-form floors, evaluation
   submission/   single-file packager, inference runtime, local contract check
   tracking.py   per-run records: config, git commit, metrics
   pipeline.py   train -> evaluate -> package, shared by every entry point
@@ -93,8 +96,11 @@ data/           provenance notes only; data is never committed
 - **Every run is traceable.** `experiments/runs/<run_id>/` stores the resolved config, git
   commit and dirty flag, seed, library versions and metrics; `experiments/registry.jsonl`
   lists all runs.
-- **Seeds.** Data generation, splits and model initialisation take explicit seeds from the
-  config; the integration test asserts that equal seeds give identical metrics.
+- **Seeds.** Data generation, splits, batch order and model initialisation take explicit seeds
+  from the config; tests assert that equal seeds give identical metrics, and that a run
+  interrupted mid-training resumes to the same weights as an uninterrupted one.
+- **Validation mirrors the sealed shift.** Models are selected on held-out subjects viewing
+  held-out images, scored with the competition metric, never on a batch-level proxy.
 
 ## Data
 
@@ -113,7 +119,7 @@ baseline, a CNN + contrastive baseline, and the transformer-head ablation, each 
 |---|---|---|
 | M0 | Repo, CI, scorer replica, submission packager, contract checks | done |
 | M1 | Alljoined-1.6M pipeline with a parity test against NeuralBench; DINOv2-giant targets | done (full-dataset run on Colab pending) |
-| M2 | CNN + contrastive baseline and the official EEGNet on the same split | next |
+| M2 | CNN + contrastive baseline and EEGNet on the same split | code done; training runs on Colab pending |
 | M3 | Electrode-position-aware channel embedding; channel-dropout and 63→32 transfer tests | |
 | M4 | Transformer encoder; pooled-CNN head vs transformer over EEG latent tokens, 3 seeds | |
 | M5 | Final training, sealed submissions, one-page report | |

@@ -31,7 +31,7 @@ def _run(config_name, tmp_path, *overrides):
 def test_ridge_trains_scores_and_packages(tmp_path):
     record = _run("smoke_ridge", tmp_path)
     summary = record["summary"]
-    test = summary["test"]
+    test = summary["val"]
 
     # It learned something that transfers to unseen subjects and images.
     assert test["chance_top5"] == pytest.approx(0.25)
@@ -51,12 +51,34 @@ def test_ridge_trains_scores_and_packages(tmp_path):
 
 def test_mean_floor_scores_chance(tmp_path):
     record = _run("smoke_mean", tmp_path)
-    test = record["summary"]["test"]
+    test = record["summary"]["val"]
     assert test["top5_acc_subject_agg"] == pytest.approx(test["chance_top5"])
     assert record["summary"]["contract_check_ok"] is True
 
 
 def test_same_seed_gives_identical_metrics(tmp_path):
-    first = _run("smoke_ridge", tmp_path / "a")["summary"]["test"]
-    again = _run("smoke_ridge", tmp_path / "b")["summary"]["test"]
+    first = _run("smoke_ridge", tmp_path / "a")["summary"]["val"]
+    again = _run("smoke_ridge", tmp_path / "b")["summary"]["val"]
+    assert first == again
+
+
+def test_cnn_trains_by_gradient_descent_and_packages(tmp_path):
+    record = _run("smoke_conv", tmp_path, "train.epochs=6", "train.batch_size=64")
+    summary = record["summary"]
+    assert summary["fit"]["steps"] == summary["fit"]["total_steps"] > 0
+    assert summary["fit"]["best_monitor"] == pytest.approx(
+        summary["val"]["top5_acc_subject_agg"]
+    ), "the packaged model must be the best checkpoint"
+    assert summary["val"]["top5_acc_subject_agg"] > 2 * summary["val"]["chance_top5"]
+    assert summary["package_parity_max_abs_diff"] < 1e-5
+    assert summary["contract_check_ok"] is True
+    rows = (Path(record["run_dir"]) / "metrics.jsonl").read_text().splitlines()
+    assert any('"split": "train"' in row and '"loss"' in row for row in rows)
+    assert any('"split": "val"' in row for row in rows)
+
+
+def test_gradient_training_is_reproducible(tmp_path):
+    args = ("train.epochs=2", "train.batch_size=64")
+    first = _run("smoke_conv", tmp_path / "a", *args)["summary"]["val"]
+    again = _run("smoke_conv", tmp_path / "b", *args)["summary"]["val"]
     assert first == again

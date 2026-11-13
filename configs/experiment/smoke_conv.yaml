@@ -1,0 +1,19 @@
+_base_: [../data/synthetic.yaml, ../train/contrastive.yaml, ../model/conv.yaml]
+name: smoke_conv
+seed: 0
+device: cpu
+train:
+  epochs: 8
+  batch_size: 128
+  lr: 1.0e-3
+  warmup_steps: 10
+  log_every: 5
+  patience: null
+loss:
+  extra_negatives: 0
+eval:
+  batch_size: 256
+  top_k: 5
+tracking:
+  root: experiments
+output_root: outputs

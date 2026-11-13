@@ -21,10 +21,10 @@ def main(argv: list[str] | None = None) -> dict:
     args = parser.parse_args(argv)
 
     record = run_training(load_config(args.config, args.overrides))
-    test = record["summary"]["test"]
-    print(
-        json.dumps({"run_id": record["run_id"], "zip": record["zip_path"], "test": test}, indent=2)
-    )
+    summary = record["summary"]
+    scores = {name: summary[name] for name in summary["n_events"] if name != "train"}
+    report = {"run_id": record["run_id"], "zip": record["zip_path"], "fit": summary["fit"]}
+    print(json.dumps({**report, **scores}, indent=2))
     return record
 
 

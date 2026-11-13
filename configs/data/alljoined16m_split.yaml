@@ -1,0 +1,14 @@
+# Development split of Alljoined-1.6M: validation is new in both subject and image.
+_base_: alljoined16m.yaml
+split:
+  holdout_subjects: [17, 18, 19, 20]
+  # Held out of the stim_train pool in groups of 10 consecutive stimulus ids (ids 0-16539 are
+  # training images, 16540-16739 the test images). This assumes the ten THINGS exemplars of a
+  # concept have consecutive ids, as in THINGS-EEG2; it is checked visually on Colab. If it
+  # were wrong, same-concept images could sit on both sides of the split.
+  holdout_image_fraction: 0.1
+  images_per_group: 10
+  seed: 33
+  # The dataset's own 200 test images are kept out of training during development,
+  # so `val_test` stays a clean second validation set.
+  train_on_test_images: false

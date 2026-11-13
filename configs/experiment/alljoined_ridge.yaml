@@ -1,0 +1,14 @@
+_base_: [../data/alljoined16m_split.yaml, ../model/ridge.yaml]
+name: alljoined_ridge
+seed: 0
+device: auto
+eval:
+  batch_size: 2048
+  top_k: 5
+  max_train_events: 20000
+tracking:
+  root: experiments
+output_root: outputs
+fit:
+  alpha: 1.0e+4
+  max_train_events: 150000
