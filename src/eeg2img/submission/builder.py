@@ -26,8 +26,10 @@ from eeg2img.submission.runtime import PACKAGE_CONFIG, PACKAGE_WEIGHTS
 #: Modules inlined into ``submission.py``, in dependency order.
 INLINE_MODULES: tuple[str, ...] = (
     "eeg2img.channels",
+    "eeg2img.montage",
     "eeg2img.models.floor",
     "eeg2img.models.conv",
+    "eeg2img.models.transformer",
     "eeg2img.models",
     "eeg2img.submission.runtime",
 )

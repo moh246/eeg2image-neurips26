@@ -17,7 +17,9 @@ SPLIT = {"holdout_subjects": [4, 5], "holdout_image_fraction": 0.25, "seed": 33}
 
 @pytest.mark.parametrize("name", sorted(MODEL_REGISTRY))
 def test_forward_pass_on_contract_shaped_input(name):
-    model = build_model(name, contract.N_CHANS, contract.N_TIMES, contract.EMBED_DIM).eval()
+    model = build_model(
+        name, contract.N_CHANS, contract.N_TIMES, contract.EMBED_DIM, ch_names=contract.EMOTIV_32
+    ).eval()
     x = torch.randn(3, contract.N_CHANS, contract.N_TIMES)
     with torch.inference_mode():
         out = model(x)

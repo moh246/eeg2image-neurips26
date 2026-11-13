@@ -72,6 +72,7 @@ def run_training(config: Mapping[str, Any], repo_dir: str | Path = ".") -> dict[
         n_chans=source.n_chans,
         n_times=source.n_times,
         n_outputs=source.embed_dim,
+        ch_names=source.ch_names,
         **dict(model_config.get("params") or {}),
     )
 

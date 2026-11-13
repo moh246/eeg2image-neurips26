@@ -55,7 +55,10 @@ def test_generated_source_is_self_contained():
         elif isinstance(node, ast.ImportFrom):
             imported.add((node.module or "").split(".")[0])
     assert "eeg2img" not in imported
-    assert imported <= {"__future__", "benchmark_utils", "collections", "json", "pathlib", "torch"}
+    # Standard library, torch, and the platform's base class: nothing else is installed there.
+    allowed = {"__future__", "benchmark_utils", "collections", "inspect", "json", "math",
+               "pathlib", "torch"}  # fmt: skip
+    assert imported <= allowed, imported - allowed
     classes = {node.name for node in tree.body if isinstance(node, ast.ClassDef)}
     assert {"Solver", "PackagedModel", "ChannelAligner"} <= classes
     assert "abc1234" in source

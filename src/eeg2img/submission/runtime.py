@@ -19,8 +19,9 @@ import torch
 import torch.nn.functional as F
 from torch import nn
 
-from eeg2img.channels import ChannelAligner
+from eeg2img.channels import ChannelAligner, canonical_channel_name
 from eeg2img.models import build_model
+from eeg2img.montage import ELECTRODE_POSITIONS
 
 PACKAGE_CONFIG = "config.json"
 PACKAGE_WEIGHTS = "weights.pt"
@@ -78,15 +79,26 @@ def load_packaged_model(meta: dict) -> PackagedModel:
         if int(meta.get("n_chans", len(trained_names))) != len(trained_names):
             raise ValueError("input has no channel names and a different channel count")
         input_names = trained_names
-    aligner = ChannelAligner(list(input_names), trained_names)
-
     network = build_model(
         package["model"]["name"],
         n_chans=len(trained_names),
         n_times=int(package["n_times"]),
         n_outputs=n_outputs,
+        ch_names=trained_names,
         **package["model"].get("params", {}),
     )
+    if hasattr(network, "set_channels"):
+        # Montage-agnostic model: use every input electrode with a known position,
+        # whether or not it was in the training montage.
+        usable = [
+            name for name in input_names if canonical_channel_name(name) in ELECTRODE_POSITIONS
+        ]
+        if not usable:
+            raise ValueError("no input channel has a known electrode position")
+        network.set_channels(usable)
+        aligner = ChannelAligner(list(input_names), usable)
+    else:
+        aligner = ChannelAligner(list(input_names), trained_names)
     state = torch.load(submission_dir / PACKAGE_WEIGHTS, map_location=device, weights_only=True)
     network.load_state_dict(state)
 
