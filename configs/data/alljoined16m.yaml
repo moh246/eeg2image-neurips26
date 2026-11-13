@@ -1,0 +1,26 @@
+# Alljoined-1.6M (NEMAR nm000134 v1.0.3): the public data on the sealed 32-channel montage.
+# Preprocessing and target values are the competition's (NeuralBench 0.4.0 eeg/image);
+# changing them makes training inputs differ from what the platform feeds the model.
+data:
+  name: alljoined16m
+  root: data                                  # holds Xu2025Alljoined/download/nm000134
+  store: data/stores/alljoined16m_v1
+  embeddings: data/stores/alljoined16m_v1/embeddings.npy
+  subjects: null                              # null = all 20 participants
+  sessions: null                              # download filter only; null = all
+  runs: null                                  # download filter only; null = all
+  preprocess:
+    sfreq: 120.0
+    l_freq: 0.1
+    h_freq: 75.0
+    notch: [50.0, 60.0]
+    epoch_start: -0.2
+    epoch_duration: 1.0
+    baseline: [0.0, 0.2]
+    clamp: 20.0
+  target:
+    model_name: facebook/dinov2-giant
+    layers: 0.6667
+    token_aggregation: mean
+    imsize: 518
+    batch_size: 32

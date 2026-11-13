@@ -15,12 +15,17 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-# Raw EEG -> model input, and the frozen DINOv2 targets.
+# Raw EEG -> model input: reading, filtering, epoching, and the NEMAR downloader.
 data = [
     "mne>=1.8",
     "nemar-py>=0.3.1",
-    "pillow>=10",
     "scipy>=1.11",
+]
+# Frozen DINOv2 targets, computed with the organisers' own extractor (GPU recommended).
+targets = [
+    "neuralset==0.4.0",
+    "pillow>=10",
+    "torchvision>=0.20",
     "transformers>=4.44",
 ]
 # The organisers' pinned stack, used for parity tests and the local contract replay.
@@ -53,7 +58,8 @@ markers = [
 line-length = 100
 target-version = "py310"
 src = ["src", "tests", "scripts"]
-extend-exclude = [".cache"]
+# The Colab notebook only launches scripts and uses IPython magics.
+extend-exclude = [".cache", "notebooks"]
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "B", "UP", "NPY", "RUF"]
