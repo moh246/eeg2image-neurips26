@@ -1,0 +1,62 @@
+{
+  "config_hash": "c5d9d5321d",
+  "git_commit": "427ece8b24764d6e74c814d67144e89e63fc99d6",
+  "git_dirty": false,
+  "name": "alljoined_eegnet",
+  "numpy": "2.4.6",
+  "platform": "Linux-6.6.159+-x86_64-with-glibc2.39",
+  "python": "3.13.16",
+  "run_id": "20261115-221256_alljoined_eegnet_427ece8",
+  "seed": 0,
+  "started_utc": "20261115-221256",
+  "summary": {
+    "contract_check_ok": true,
+    "device": "cuda",
+    "fit": {
+      "best_monitor": 0.011666666666666667,
+      "best_step": 8460,
+      "early_stopped": false,
+      "monitor": "val/top5_acc_subject_agg",
+      "n_parameters": 76848,
+      "steps": 9400,
+      "total_steps": 9400
+    },
+    "n_events": {
+      "train": 962085,
+      "val": 26658,
+      "val_test": 64864
+    },
+    "package_parity_max_abs_diff": 5.960464477539063e-08,
+    "train": {
+      "chance_top5": 0.0004534324839031468,
+      "n_candidates": 11027,
+      "n_queries": 20000,
+      "n_queries_subject_agg": 19371,
+      "top1_acc": 0.00035,
+      "top1_acc_subject_agg": 0.0004129884879458985,
+      "top5_acc": 0.00215,
+      "top5_acc_subject_agg": 0.0022198131227092045
+    },
+    "val": {
+      "chance_top5": 0.0030303030303030303,
+      "n_candidates": 1650,
+      "n_queries": 26658,
+      "n_queries_subject_agg": 6600,
+      "top1_acc": 0.0015755120414134593,
+      "top1_acc_subject_agg": 0.002575757575757576,
+      "top5_acc": 0.0070898041863605675,
+      "top5_acc_subject_agg": 0.011666666666666667
+    },
+    "val_test": {
+      "chance_top5": 0.025,
+      "n_candidates": 200,
+      "n_queries": 64864,
+      "n_queries_subject_agg": 800,
+      "top1_acc": 0.011655155402072027,
+      "top1_acc_subject_agg": 0.0275,
+      "top5_acc": 0.05229403058707449,
+      "top5_acc_subject_agg": 0.11625
+    }
+  },
+  "torch": "2.14.1+cu130"
+}
