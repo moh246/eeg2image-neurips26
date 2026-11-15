@@ -45,6 +45,8 @@ CLAMP = 20.0
 #: Target space: facebook/dinov2-giant, hidden state at 2/3 depth, mean over tokens.
 TARGET_MODEL = "facebook/dinov2-giant"
 TARGET_LAYER_FRACTION = 0.6667
+#: The task's nominal resize. The HuggingFace processor that runs next resizes to 256 and
+#: centre-crops to 224, so the model sees 224 x 224 inputs (see data/README.md, "Targets").
 TARGET_IMAGE_SIZE = 518
 EMBED_DIM = 1536
 

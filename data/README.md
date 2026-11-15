@@ -75,22 +75,81 @@ epoch values by less than 0.02 on a signal of unit scale (`tests/test_store.py`)
 
 ### Preparing the data
 
-On Colab, run [`notebooks/colab_prepare_data.ipynb`](../notebooks/colab_prepare_data.ipynb).
-Locally (about 12 GB of disk):
+One script does the whole preparation on a GPU machine and resumes if interrupted:
 
 ```bash
-ALLJOINED_ACCEPT_LICENCE=1 .venv/bin/python scripts/prepare_alljoined.py   # EEG store
-.venv/bin/python scripts/embed_images.py --device cuda                      # image targets
+pip install -e ".[data]" transformers torchvision pillow
+bash scripts/colab_prepare.sh /content/work /content/persist   # scratch dir, output dir
 ```
+
+It downloads the release, preprocesses the recordings with one process per CPU core, computes
+the image targets, copies the finished store to the output directory and prints its SHA-256
+sums. The individual steps are `scripts/prepare_alljoined.py` and `scripts/embed_images.py`.
+It needs about 20 GB of scratch disk; the store itself is 3.7 GB.
+
+### The prepared store (v1)
+
+Built on 15 Nov 2026 on a Colab T4 runtime (2 CPU cores) from commit `427ece8`, with
+Python 3.13.16, mne 1.13.2, torch 2.14.1+cu130 and transformers 5.22.1.
+
+| | |
+|---|---|
+| Recordings | 1,520 = 20 participants × 4 sessions × 19 runs |
+| Image events | 1,659,910, of which 324,294 show one of the 200 test images |
+| Distinct images | 16,740 (16,540 training, 200 test) |
+| Continuous samples | 55,765,800 at 120 Hz (129 hours), 32 channels, float16 |
+| Wall time | download 10 min, preprocessing 12 min, image targets 38 min |
+
+The release also contains `sub-08/ses-02old` (five runs of an abandoned session). The
+organisers' reader enumerates sessions 1–4 and runs 1–19 only and never reads it; this
+pipeline skips it too.
+
+| File | Bytes | SHA-256 |
+|---|---|---|
+| `eeg.npy` | 3,569,011,328 | `47fa07c2328acaacea2f0f6bd31846439b5330af11f9c32e7f2cfd79c987c961` |
+| `index.npz` | 107,957,726 | `fd6f6026f4f4fd66835f509d8e31c3a4a1c9fb22d91207cbcebbd29e85e9a5ab` |
+| `images.json` | 217,620 | `12193429fed8011d7e34813c6d84d6a8346dfc3b9ea172bf35628546ae262ee0` |
+| `meta.json` | 43,618 | `4bb2620a35083cb89bd115180a2429ed85d663fee8df6d85ff06da0732f127e8` |
+| `embeddings.npy` | 102,850,688 | `2783af0104e3bc0263a960ef4f067ab331df790797c5d518e7d909c0fb231a68` |
+
+The store is not redistributed (the licence forbids derivatives being shared); rebuild it with
+the script above and compare the sums. `eeg.npy` and `index.npz` depend only on the release
+and the preprocessing; `embeddings.npy` can differ in the last bits across GPU and library
+versions.
+
+### Image groups used by the validation split
+
+Validation images are held out in groups of ten consecutive stimulus ids, on the assumption
+that each group is the ten exemplars of one THINGS concept. `scripts/check_image_groups.py`
+tests this on the target embeddings of the 16,540 training images:
+
+| | |
+|---|---|
+| Similarity of neighbouring ids inside a group | 0.416 |
+| Similarity of neighbouring ids across a group boundary | 0.025 |
+| Boundaries less similar than both pairs next to them, groups of 10 | 92.6% |
+| Same, if groups were 9 or 11 ids wide | 30.5%, 32.7% |
+
+So groups of ten are concept groups, and no concept has images on both sides of the split.
 
 ## Targets
 
-Image embeddings are 1536-dimensional `facebook/dinov2-giant` features: the hidden state at
-2/3 depth, averaged over tokens. `scripts/embed_images.py` computes them by calling the
-organisers' own extractor (`neuralset.extractors.image.HuggingFaceImage`, neuralset 0.4.0) with
-the parameters of the NeuralBench image task, rather than a reimplementation, so the targets
-are produced by the same code as the competition gallery. The table is computed once per
-unique stimulus and stored next to the EEG store as `embeddings.npy`.
+Image embeddings are 1536-dimensional `facebook/dinov2-giant` features: the hidden state after
+26 of the 40 blocks (index `int(0.6667 × 40)`), averaged over all tokens.
+
+The task config asks for `imsize: 518`, but that resize is undone by the HuggingFace
+processor the organisers' extractor calls next, which resizes to 256 and centre-crops to 224.
+The model therefore sees 224 × 224 inputs (257 tokens). This was checked on the processor's
+output tensor, and this repository reproduces the same sequence of calls rather than the
+nominal 518.
+
+`scripts/embed_images.py` has two backends. `--backend reference` calls the organisers' own
+extractor (`neuralset.extractors.image.HuggingFaceImage`, neuralset 0.4.0). `--backend
+truncated` loads the same model, drops the 14 blocks after the layer that is read, and
+otherwise makes the same calls; it is a third faster and its output was identical (max abs
+difference 0.0) to the reference backend on sample images with `facebook/dinov2-small`. The
+v1 store was built with the truncated backend. The table is computed once per unique stimulus
+and stored next to the EEG store as `embeddings.npy`.
 
 ## Channel order
 
