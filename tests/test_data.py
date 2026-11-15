@@ -84,3 +84,23 @@ def test_split_is_reproducible(small_epochs):
     first = make_split(small_epochs, config)[1]
     again = make_split(small_epochs, config)[1]
     np.testing.assert_array_equal(first.image_index, again.image_index)
+
+
+def test_group_coherence_detects_concept_groups():
+    from eeg2img.data.checks import group_coherence
+
+    rng = np.random.default_rng(0)
+    concepts = rng.standard_normal((30, 16))
+    embeddings = np.repeat(concepts, 10, axis=0) + 0.3 * rng.standard_normal((300, 16))
+    keys = np.arange(300)
+    shuffle = rng.permutation(300)  # row order must not matter
+
+    right = group_coherence(embeddings[shuffle], keys[shuffle], group_size=10)
+    assert right["within_group_similarity"] > right["across_boundary_similarity"] + 0.5
+    assert right["clean_boundary_fraction"] > 0.9
+    assert right["n_boundary_pairs"] == 29 and right["n_within_pairs"] == 270
+
+    wrong = group_coherence(embeddings, keys, group_size=7)
+    assert wrong["clean_boundary_fraction"] < 0.5
+    with pytest.raises(ValueError, match="neighbouring"):
+        group_coherence(embeddings[:5], keys[:5], group_size=10)
