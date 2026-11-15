@@ -77,6 +77,22 @@ def test_build_resumes_from_existing_shards(built):
     assert (path / "eeg.npy").read_bytes() == before
 
 
+def test_build_in_parts_matches_single_build(built, tmp_path):
+    path, recordings, _, _ = built
+    out = tmp_path / "parts"
+    for index in range(2):
+        build_store(out, ["a", "b"], recordings.__getitem__, CONFIG, part=(index, 2))
+        assert not (out / "eeg.npy").exists(), "a partial build must not assemble"
+
+    def fail(name):
+        raise AssertionError(f"{name} was preprocessed again")
+
+    build_store(out, ["a", "b"], fail, CONFIG)
+    assert (out / "eeg.npy").read_bytes() == (path / "eeg.npy").read_bytes()
+    with pytest.raises(ValueError, match="part"):
+        build_store(out, ["a", "b"], fail, CONFIG, part=(2, 2))
+
+
 def test_to_epochset_validates_and_aligns_targets(built):
     path, *_ = built
     store = EpochStore(path)

@@ -85,19 +85,32 @@ def build_store(
     config: PreprocessConfig | None = None,
     provenance: dict | None = None,
     progress: Callable[[Iterable], Iterable] = lambda items: items,
+    part: tuple[int, int] | None = None,
 ) -> Path:
     """Build a store from recordings; resumable and deterministic.
 
     ``load(name)`` preprocesses one recording. Recordings whose shard already
     exists are skipped, so an interrupted build continues where it stopped.
     ``names`` fixes the order of recordings in the store.
+
+    ``part=(i, n)`` preprocesses only every ``n``-th recording starting at the
+    ``i``-th and does not assemble, so ``n`` processes can share the work; a
+    final call without ``part`` then finds every shard present and assembles.
     """
     config = config or PreprocessConfig()
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
-    for name in progress(list(names)):
+    todo = list(names)
+    if part is not None:
+        index, count = part
+        if not 0 <= index < count:
+            raise ValueError(f"part must be (i, n) with 0 <= i < n, got {part}")
+        todo = todo[index::count]
+    for name in progress(todo):
         if not _shard_path(out_dir, name).exists():
             write_shard(out_dir, load(name), config)
+    if part is not None:
+        return out_dir
     return assemble_store(out_dir, names, config, provenance)
 
 

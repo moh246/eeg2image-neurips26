@@ -3,8 +3,9 @@
 
     python scripts/embed_images.py --config configs/data/alljoined16m.yaml
 
-Uses the organisers' own extractor, so targets match the competition gallery.
-A GPU is strongly recommended. Resumes if interrupted.
+By default uses the organisers' own extractor, so targets match the competition
+gallery. ``--backend truncated`` computes the same values about a third faster
+and also runs on Apple GPUs. A GPU is strongly recommended. Resumes if interrupted.
 Needs the targets extra: pip install -e ".[data,targets]".
 """
 
@@ -29,12 +30,15 @@ def _progress(items):
 def main(argv: list[str] | None = None) -> str:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--config", default="configs/data/alljoined16m.yaml")
-    parser.add_argument("--device", default="auto", choices=["auto", "cpu", "cuda"])
+    parser.add_argument("--device", default="auto", choices=["auto", "cpu", "cuda", "mps"])
+    parser.add_argument("--backend", default="reference", choices=["reference", "truncated"])
     parser.add_argument("overrides", nargs="*", help="dotted.key=value config overrides")
     args = parser.parse_args(argv)
 
     data_config = require(load_config(args.config, args.overrides), "data")
-    out_path = embed_store_images(data_config, device=args.device, progress=_progress)
+    out_path = embed_store_images(
+        data_config, device=args.device, progress=_progress, backend=args.backend
+    )
     table = np.load(out_path, mmap_mode="r")
     print(f"wrote {out_path}: shape={table.shape} dtype={table.dtype}")
     return str(out_path)
