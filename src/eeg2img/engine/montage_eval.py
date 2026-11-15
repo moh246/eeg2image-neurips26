@@ -17,8 +17,7 @@ from typing import Any
 import torch
 
 from eeg2img.data.source import ArraySource
-from eeg2img.metrics import score_predictions_indexed
-from eeg2img.submission.runtime import load_packaged_model
+from eeg2img.engine.packages import predict_package, score
 
 
 def channel_subset(n_chans: int, keep: int, seed: int) -> list[int]:
@@ -38,29 +37,8 @@ def score_with_channels(
     k: int = 5,
 ) -> dict[str, float | int]:
     """Competition scores when the input holds only ``channels`` of the montage."""
-    names = [source.ch_names[i] for i in channels]
-    model = load_packaged_model(
-        {
-            "submission_dir": str(package_dir),
-            "device": str(source.device),
-            "ch_names": names,
-            "n_chans": len(names),
-            "n_times": source.n_times,
-            "n_outputs": source.embed_dim,
-        }
-    )
-    select = torch.as_tensor(list(channels), device=source.device)
-    outputs = []
-    for start in range(0, len(indices), batch_size):
-        batch = source.batch(indices[start : start + batch_size])
-        outputs.append(model.predict(batch.index_select(1, select)).float().cpu())
-    return score_predictions_indexed(
-        torch.cat(outputs).numpy(),
-        source.image[indices].numpy(),
-        source.embeddings.cpu().numpy(),
-        source.subject[indices].numpy(),
-        k=k,
-    )
+    predictions = predict_package(package_dir, source, indices, channels, batch_size)
+    return score(predictions, source, indices, k=k)
 
 
 def evaluate_channel_subsets(

@@ -66,3 +66,30 @@ def test_summarize_aggregates_over_seeds():
     assert "| b | 1 | 1,234 | 50.00 |" in table
     assert "500-way, chance 1.00" in table
     assert to_markdown([]) == "_no finished runs_\n"
+
+
+def test_resolve_packages_and_evaluation_records(tmp_path):
+    from eeg2img.results import resolve_packages, write_evaluation
+
+    records = [_record("a", 1, 0.3), _record("a", 0, 0.1), _record("b", 0, 0.5)]
+    for record in records[:2]:
+        package = tmp_path / "outputs" / record["run_id"]
+        package.mkdir(parents=True)
+        (package / "weights.pt").write_bytes(b"")
+
+    found = resolve_packages(records, tmp_path / "outputs", "a")
+    assert [path.name for path in found] == ["2026_a_0", "2026_a_1"], "ordered by seed"
+    assert len(resolve_packages(records, tmp_path / "outputs", "a", seeds=[1])) == 1
+    with pytest.raises(LookupError):
+        resolve_packages(records, tmp_path / "outputs", "missing")
+    with pytest.raises(FileNotFoundError):
+        resolve_packages(records, tmp_path / "outputs", "b")
+
+    source, target = tmp_path / "remote", tmp_path / "local"
+    _write_experiments(source, records[:1])
+    path = write_evaluation(source, "ensemble_a", {"kind": "ensemble", "value": 1}, tmp_path)
+    saved = json.loads(path.read_text())
+    assert saved["label"] == "ensemble_a" and saved["value"] == 1 and "git_commit" in saved
+    assert import_runs(source, target) == ["2026_a_1", "evaluations/ensemble_a.json"]
+    assert (target / "evaluations" / "ensemble_a.json").exists()
+    assert import_runs(source, target) == []

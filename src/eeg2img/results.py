@@ -14,13 +14,18 @@ import shutil
 import tarfile
 import tempfile
 from collections import defaultdict
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
+from datetime import datetime, timezone
 from pathlib import Path
 from statistics import mean, stdev
 from typing import Any
 
+from eeg2img.tracking import git_state
+
 #: The competition metric: Top-5 after averaging a participant's repeats of an image.
 PRIMARY_METRIC = "top5_acc_subject_agg"
+#: Sub-directory of ``experiments`` holding evaluations of finished runs.
+EVALUATIONS_DIR = "evaluations"
 
 
 def read_registry(path: str | Path) -> list[dict[str, Any]]:
@@ -67,7 +72,59 @@ def import_runs(source: str | Path, experiments_dir: str | Path) -> list[str]:
                 handle.write(json.dumps(record, sort_keys=True) + "\n")
             known.add(run_id)
             added.append(run_id)
+
+        # Evaluations of finished runs (ensembles, channel subsets) are single JSON files.
+        for path in sorted((source / EVALUATIONS_DIR).glob("*.json")):
+            target = experiments_dir / EVALUATIONS_DIR / path.name
+            if not target.exists():
+                target.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(path, target)
+                added.append(f"{EVALUATIONS_DIR}/{path.name}")
     return added
+
+
+def resolve_packages(
+    records: Sequence[Mapping[str, Any]],
+    outputs_root: str | Path,
+    name: str,
+    seeds: Sequence[int] | None = None,
+) -> list[Path]:
+    """Package directories of the finished runs of experiment ``name``, by seed."""
+    runs = sorted((r for r in records if r["name"] == name), key=lambda r: r["seed"])
+    if seeds is not None:
+        runs = [record for record in runs if record["seed"] in set(seeds)]
+    if not runs:
+        raise LookupError(f"no finished run of {name!r} (seeds {seeds}) in the registry")
+    packages = [Path(outputs_root) / record["run_id"] for record in runs]
+    missing = [str(path) for path in packages if not (path / "weights.pt").exists()]
+    if missing:
+        raise FileNotFoundError(f"packages not found: {', '.join(missing)}")
+    return packages
+
+
+def write_evaluation(
+    experiments_dir: str | Path,
+    label: str,
+    payload: Mapping[str, Any],
+    repo_dir: str | Path = ".",
+) -> Path:
+    """Write an evaluation of finished runs to ``evaluations/<label>.json``.
+
+    The record carries the commit of the evaluating code and the time, like a
+    run record does.
+    """
+    state = git_state(repo_dir)
+    record = {
+        "label": label,
+        "git_commit": state["commit"],
+        "git_dirty": state["dirty"],
+        "created_utc": datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S"),
+        **payload,
+    }
+    path = Path(experiments_dir) / EVALUATIONS_DIR / f"{label}.json"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(record, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    return path
 
 
 def summarize(

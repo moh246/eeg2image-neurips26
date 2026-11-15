@@ -58,3 +58,32 @@ def test_channel_subset_is_seeded_sorted_and_checked():
     assert subset == sorted(set(subset)) and len(subset) == 8
     with pytest.raises(ValueError, match="keep"):
         channel_subset(32, 33, seed=0)
+
+
+def test_ensemble_scores_members_and_their_mean(tmp_path, source):
+    from eeg2img.engine.packages import evaluate_ensemble, predict_package, score
+
+    packages = []
+    for seed in range(2):
+        torch.manual_seed(seed)
+        model = build_model("conv", n_chans=8, n_times=30, n_outputs=12, ch_names=CH,
+                            **MODELS["conv"])  # fmt: skip
+        write_package(model.eval(), tmp_path / str(seed),
+                      model_config={"name": "conv", "params": MODELS["conv"]},
+                      ch_names=CH, n_times=30, n_outputs=12, sfreq=30.0)  # fmt: skip
+        packages.append(tmp_path / str(seed))
+    indices = torch.arange(len(source))
+
+    report = evaluate_ensemble(packages, source, indices)
+    singles = [predict_package(package, source, indices) for package in packages]
+    assert report["members"] == [
+        score(single, source, indices)["top5_acc_subject_agg"] for single in singles
+    ]
+    mean = score((singles[0] + singles[1]) / 2, source, indices)
+    assert report["ensemble"] == mean["top5_acc_subject_agg"]
+    assert report["n_candidates"] == 30
+
+    alone = evaluate_ensemble(packages[:1], source, indices)
+    assert alone["ensemble"] == alone["members"][0], "an ensemble of one is that model"
+    with pytest.raises(ValueError, match="at least one"):
+        evaluate_ensemble([], source, indices)

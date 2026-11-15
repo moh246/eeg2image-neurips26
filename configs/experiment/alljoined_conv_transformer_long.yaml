@@ -1,0 +1,9 @@
+# The transformer-head model with a longer schedule. In the 10-epoch comparison its
+# validation score was still rising when the schedule ended, while the CNN head peaked at
+# epoch 3; this run asks how much of the gap is the schedule. Not part of the equal-budget
+# comparison.
+_base_: alljoined_conv_transformer.yaml
+name: alljoined_conv_transformer_long
+train:
+  epochs: 25
+  patience: 6
