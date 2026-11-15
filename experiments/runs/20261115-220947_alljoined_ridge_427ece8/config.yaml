@@ -1,0 +1,56 @@
+data:
+  embeddings: /content/work/stores/alljoined16m_v1/embeddings.npy
+  name: alljoined16m
+  preprocess:
+    baseline:
+    - 0.0
+    - 0.2
+    clamp: 20.0
+    epoch_duration: 1.0
+    epoch_start: -0.2
+    h_freq: 75.0
+    l_freq: 0.1
+    notch:
+    - 50.0
+    - 60.0
+    sfreq: 120.0
+  root: data
+  runs: null
+  sessions: null
+  store: /content/work/stores/alljoined16m_v1
+  subjects: null
+  target:
+    batch_size: 32
+    imsize: 518
+    layers: 0.6667
+    model_name: facebook/dinov2-giant
+    token_aggregation: mean
+device: auto
+eval:
+  batch_size: 2048
+  max_train_events: 20000
+  top_k: 5
+fit:
+  alpha: 10000.0
+  max_train_events: 150000
+model:
+  name: ridge
+  normalize_output: true
+  params: {}
+name: alljoined_ridge
+output_root: /content/runs/outputs
+seed: 0
+split:
+  holdout_image_fraction: 0.1
+  holdout_subjects:
+  - 17
+  - 18
+  - 19
+  - 20
+  images_per_group: 10
+  seed: 33
+  train_on_test_images: false
+tracking:
+  root: /content/runs/experiments
+train:
+  checkpoint_dir: /content/runs/checkpoints/alljoined_ridge_seed0
