@@ -93,3 +93,29 @@ def test_resolve_packages_and_evaluation_records(tmp_path):
     assert import_runs(source, target) == ["2026_a_1", "evaluations/ensemble_a.json"]
     assert (target / "evaluations" / "ensemble_a.json").exists()
     assert import_runs(source, target) == []
+
+
+def test_results_block_is_replaced_between_markers():
+    from eeg2img.results import RESULTS_END, RESULTS_START, replace_results_block
+
+    document = f"intro\n{RESULTS_START}\nold\n{RESULTS_END}\noutro\n"
+    updated = replace_results_block(document, "| new |\n")
+    assert updated == f"intro\n{RESULTS_START}\n| new |\n{RESULTS_END}\noutro\n"
+    assert replace_results_block(updated, "| new |\n") == updated
+    with pytest.raises(ValueError, match="markers"):
+        replace_results_block("no markers here", "x")
+
+
+@pytest.mark.parametrize("document", ["README.md", "docs/report.md"])
+def test_committed_results_tables_match_the_registry(document):
+    """Numbers in the README and report are generated from run records, not typed."""
+    from pathlib import Path
+
+    from eeg2img.results import RESULTS_END, RESULTS_START
+
+    root = Path(__file__).resolve().parents[1]
+    text = (root / document).read_text(encoding="utf-8")
+    rows = summarize(read_registry(root / "experiments" / "registry.jsonl"))
+    table = to_markdown(rows)
+    block = text[text.index(RESULTS_START) + len(RESULTS_START) : text.index(RESULTS_END)]
+    assert block.strip() == table.strip(), f"run scripts/summarize_runs.py --write {document}"

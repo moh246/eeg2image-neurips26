@@ -9,7 +9,7 @@ KIT_REPO   := https://github.com/neural-interfaces26/2026-competition.git
 KIT_COMMIT := bddaff3dc6bd4b7300d531797685279a22c7bbf9
 KIT_DIR    := .cache/starter-kit
 
-.PHONY: setup setup-official lint format test check train contract-replay parity data clean
+.PHONY: setup setup-official lint format test check train results contract-replay parity data clean
 
 setup:  ## create the virtualenv and install the package with dev tools
 	$(PYTHON) -m venv $(VENV)
@@ -34,6 +34,10 @@ check: lint test  ## everything CI runs
 
 train:  ## run one experiment: make train CONFIG=configs/experiment/<name>.yaml
 	$(BIN)/python scripts/train.py --config $(CONFIG)
+
+results:  ## regenerate the results tables in README.md and docs/report.md from run records
+	$(BIN)/python scripts/summarize_runs.py --write README.md
+	$(BIN)/python scripts/summarize_runs.py --write docs/report.md
 
 $(KIT_DIR):
 	git clone --quiet $(KIT_REPO) $(KIT_DIR)

@@ -8,8 +8,9 @@ python scripts/summarize_runs.py alljoined_conv alljoined_conv_transformer
 from __future__ import annotations
 
 import argparse
+from pathlib import Path
 
-from eeg2img.results import read_registry, summarize, to_markdown
+from eeg2img.results import read_registry, replace_results_block, summarize, to_markdown
 
 
 def main(argv: list[str] | None = None) -> str:
@@ -17,6 +18,7 @@ def main(argv: list[str] | None = None) -> str:
     parser.add_argument("names", nargs="*", help="experiments to include, in this order")
     parser.add_argument("--registry", default="experiments/registry.jsonl")
     parser.add_argument("--splits", nargs="+", default=["val", "val_test"])
+    parser.add_argument("--write", default=None, help="file whose results block to refresh")
     args = parser.parse_args(argv)
 
     rows = summarize(read_registry(args.registry), splits=args.splits)
@@ -24,6 +26,11 @@ def main(argv: list[str] | None = None) -> str:
         order = {name: index for index, name in enumerate(args.names)}
         rows = sorted((row for row in rows if row["name"] in order), key=lambda r: order[r["name"]])
     table = to_markdown(rows, splits=args.splits)
+    if args.write:
+        path = Path(args.write)
+        path.write_text(
+            replace_results_block(path.read_text(encoding="utf-8"), table), encoding="utf-8"
+        )
     print(table, end="")
     return table
 
