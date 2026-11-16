@@ -1,0 +1,80 @@
+data:
+  embeddings: /content/work/stores/alljoined16m_v1/embeddings.npy
+  name: alljoined16m
+  preprocess:
+    baseline:
+    - 0.0
+    - 0.2
+    clamp: 20.0
+    epoch_duration: 1.0
+    epoch_start: -0.2
+    h_freq: 75.0
+    l_freq: 0.1
+    notch:
+    - 50.0
+    - 60.0
+    sfreq: 120.0
+  root: data
+  runs: null
+  sessions: null
+  store: /content/work/stores/alljoined16m_v1
+  subjects: null
+  target:
+    batch_size: 32
+    imsize: 518
+    layers: 0.6667
+    model_name: facebook/dinov2-giant
+    token_aggregation: mean
+device: auto
+eval:
+  batch_size: 2048
+  max_train_events: 20000
+  top_k: 5
+loss:
+  extra_negatives: 4096
+  learn_temperature: true
+  mse_weight: 0.0
+  temperature: 0.07
+model:
+  name: conv
+  normalize_output: true
+  params:
+    d_model: 128
+    dropout: 0.25
+    head_dropout: 0.5
+    n_filters: 40
+    pool_kernel: 15
+    pool_stride: 5
+    temporal_kernel: 25
+name: alljoined_conv
+output_root: /content/runs/outputs
+seed: 2
+split:
+  holdout_image_fraction: 0.1
+  holdout_subjects:
+  - 17
+  - 18
+  - 19
+  - 20
+  images_per_group: 10
+  seed: 33
+  train_on_test_images: false
+tracking:
+  root: /content/runs/experiments
+train:
+  amp: true
+  batch_size: 1024
+  channel_dropout: 0.0
+  checkpoint_dir: /content/runs/checkpoints/alljoined_conv_seed2
+  epochs: 10
+  eval_batch_size: 2048
+  eval_every: null
+  eval_max_events: null
+  grad_clip: 1.0
+  log_every: 50
+  lr: 0.0003
+  lr_floor: 0.01
+  monitor: val/top5_acc_subject_agg
+  patience: 4
+  warmup_steps: 500
+  weight_decay: 0.05
