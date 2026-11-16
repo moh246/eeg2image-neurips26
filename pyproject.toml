@@ -1,10 +1,11 @@
 [build-system]
-requires = ["setuptools>=68"]
+requires = ["setuptools>=77"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "eeg2img"
 version = "0.1.0"
+license = "MIT"
 description = "EEG-to-image retrieval for the EEG/EMG Foundation Challenge 2026, Track 01"
 readme = "README.md"
 requires-python = ">=3.10"
