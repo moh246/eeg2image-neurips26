@@ -1,4 +1,4 @@
-# EEG-to-image retrieval on unseen people and images: does a transformer head help?
+# EEG-to-image on unseen people and images: does a transformer head help?
 
 Track 01 of the EEG/EMG Foundation Challenge 2026 · 16 November 2026 ·
 [code and run records](https://github.com/moh246/eeg2image-neurips26)
@@ -13,19 +13,17 @@ tokens gives 16.0 ± 1.2%: no improvement, at half the parameters.
 The task maps one second of 32-channel consumer EEG (Emotiv, 120 Hz) to the frozen DINOv2-giant
 embedding of the image the person was viewing; a gallery is ranked by cosine similarity and
 scored by Top-5 after averaging a participant's repeats of an image. The sealed test set has new
-participants and new images. The contract was read from the organisers' code and their
-preprocessing reproduced to within 4e-6 on real recordings. Within-participant scores do not
-predict the sealed score (EEGNet reference: 28% public, 0.027% sealed), so every number here
-comes from participants and images held out together.
+participants and new images; within-participant scores do not predict it (EEGNet: 28% public,
+0.027% sealed), so every number here comes from participants and images held out together. The
+organisers' preprocessing was reproduced to within 4e-6 on real recordings.
 
 ## Method
 
 - **Encoder.** A temporal convolution, a spatial convolution across the 32 electrodes and
   pooling turn an epoch into 22 latent tokens. The *CNN head* flattens and projects them. The
-  *transformer head* replaces only that step with a 4-layer transformer over the token
-  sequence, either bidirectional with mean pooling or causal, predicting from the latest token
-  as a language-model decoder would. Tokenizer, loss, data and schedule are identical, so the
-  comparison isolates the head.
+  *transformer head* replaces only that step with a 4-layer transformer over the tokens,
+  bidirectional (mean-pooled) or causal (predicting from the latest token, as a language-model
+  decoder would). Everything else is identical, so the comparison isolates the head.
 - **Objective.** CLIP-style contrastive loss between predicted and true image embeddings, with
   up to 4,096 extra training images as negatives and a learned temperature.
 - **Data.** 962,085 single-trial training epochs; 10 epochs; checkpoint chosen on `val`.
@@ -58,21 +56,17 @@ Top-5 in percent, mean ± standard deviation over seeds, generated from the run 
 `val` (1,650 held-out training-pool images, about 4 repeats) chose the checkpoint. One run's
 sampling error is about ±1.3 points on `val_test` and ±0.16 on `val`, so the heads are
 indistinguishable; both clearly beat the organisers' reference architecture (EEGNet) and a
-linear map, which sits at chance. The CNN head peaks at epoch 3 or 4, the transformer head at
-epochs 6 to 9. For all models the training loss stays close to its chance level: accuracy is
-limited by how little image information a single trial carries across people, not by the head.
+linear map, which sits at chance. For all models the training loss stays close to its chance
+level: accuracy is limited by how little image information a single trial carries across people,
+not by the head.
 
 ## Limits and next steps
 
-- No sealed-leaderboard score: challenge registration had closed before this work started, so
-  no model could be uploaded. Instead, every trained model was packaged in the platform's
-  format and passed a contract check, and the packaging was run end to end through the
-  organisers' own Benchopt benchmark.
-- The causal head and EEGNet have one seed; there is one split; no foundation-model baseline
-  (REVE) was run.
-- Finish the queued runs: remaining seeds, the montage-agnostic model, electrode-removal test,
-  seed ensemble, and a longer schedule for the transformer head.
-- Raise the signal before enlarging the model: train on averages of repeated presentations,
-  and add objectives that make the embedding invariant to the participant.
-- Test the position-aware encoder where it should matter: pre-training on 63-channel
-  THINGS-EEG2 and transferring to the 32-channel montage.
+- **No leaderboard score.** Registration had closed before this work started, so nothing could
+  be uploaded; instead every model was packaged in the platform's format, passed a contract
+  check, and the packaging ran end to end through the organisers' Benchopt benchmark.
+- **Unfinished runs.** The causal head and EEGNet have one seed, there is one split, and the
+  montage-agnostic model, the electrode-removal test and a REVE baseline did not run.
+- **Next.** Raise the signal before enlarging the model (train on averaged repeats, add
+  participant-invariant objectives), and test the position-aware encoder where it should
+  matter: pre-training on 63-channel THINGS-EEG2 and transferring to the 32-channel montage.

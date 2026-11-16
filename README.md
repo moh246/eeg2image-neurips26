@@ -12,7 +12,7 @@ experiment has been run on the full public dataset: on participants and images n
 training, the CNN + contrastive baseline reaches 16.2 ± 0.3% Top-5 on a 200-image gallery
 (chance 2.5%), and replacing its head with a transformer over the EEG latent tokens does not
 improve on that (16.0 ± 1.2%). See [Results](#results) and the one-page
-[report](docs/report.md). No leaderboard submission was possible: challenge registration had
+[report](docs/report.md) ([PDF](docs/report.pdf)). No leaderboard submission was possible: challenge registration had
 closed before this work started.
 
 ## The task, as verified
