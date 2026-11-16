@@ -135,7 +135,8 @@ def summarize(
     """One row per experiment name: seeds, and mean/std/chance of ``metric`` per split.
 
     Runs are grouped by experiment name, so each experiment config must keep
-    its hyperparameters fixed across seeds; a variant gets its own name.
+    its hyperparameters fixed across seeds; a variant gets its own name. Only
+    the earliest run of each seed enters the statistics.
     """
     groups: dict[str, list[dict[str, Any]]] = defaultdict(list)
     for record in records:
@@ -143,12 +144,22 @@ def summarize(
 
     rows = []
     for name, runs in groups.items():
-        runs = sorted(runs, key=lambda record: record["seed"])
+        # A seed that was run again (for example to retrain lost weights) counts once: the
+        # earliest run is reported and later ones are listed as reruns.
+        first: dict[int, dict[str, Any]] = {}
+        reruns = []
+        for record in sorted(runs, key=lambda record: record["run_id"]):
+            if record["seed"] in first:
+                reruns.append(record["run_id"])
+            else:
+                first[record["seed"]] = record
+        runs = [first[seed] for seed in sorted(first)]
         fit = runs[0]["summary"].get("fit", {})
         row: dict[str, Any] = {
             "name": name,
             "seeds": [record["seed"] for record in runs],
             "run_ids": [record["run_id"] for record in runs],
+            "reruns": reruns,
             "n_parameters": fit.get("n_parameters"),
         }
         for split in splits:

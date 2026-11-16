@@ -61,6 +61,11 @@ def test_summarize_aggregates_over_seeds():
     assert rows["a"]["val"]["std"] == pytest.approx(0.1414, abs=1e-4)
     assert rows["b"]["val"]["std"] is None, "one seed has no spread"
 
+    rerun = {**_record("a", 0, 0.9), "run_id": "2027_a_0_again"}
+    again = {row["name"]: row for row in summarize([*records, rerun])}
+    assert again["a"]["val"] == rows["a"]["val"], "a rerun of a seed must not be counted twice"
+    assert again["a"]["reruns"] == ["2027_a_0_again"] and rows["a"]["reruns"] == []
+
     table = to_markdown(list(rows.values()))
     assert "| a | 2 | 1,234 | 20.00 ± 14.14 |" in table
     assert "| b | 1 | 1,234 | 50.00 |" in table
