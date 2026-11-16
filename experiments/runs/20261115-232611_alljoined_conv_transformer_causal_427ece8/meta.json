@@ -1,0 +1,13 @@
+{
+  "config_hash": "18729de35d",
+  "git_commit": "427ece8b24764d6e74c814d67144e89e63fc99d6",
+  "git_dirty": false,
+  "name": "alljoined_conv_transformer_causal",
+  "numpy": "2.4.6",
+  "platform": "Linux-6.6.159+-x86_64-with-glibc2.39",
+  "python": "3.13.16",
+  "run_id": "20261115-232611_alljoined_conv_transformer_causal_427ece8",
+  "seed": 0,
+  "started_utc": "20261115-232611",
+  "torch": "2.14.1+cu130"
+}
