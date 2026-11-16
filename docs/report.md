@@ -64,8 +64,12 @@ limited by how little image information a single trial carries across people, no
 
 ## Limits and next steps
 
+- No sealed-leaderboard score: challenge registration had closed before this work started, so
+  no model could be uploaded. Instead, every trained model was packaged in the platform's
+  format and passed a contract check, and the packaging was run end to end through the
+  organisers' own Benchopt benchmark.
 - The causal head and EEGNet have one seed; there is one split; no foundation-model baseline
-  (REVE) and no sealed submission were run.
+  (REVE) was run.
 - Finish the queued runs: remaining seeds, the montage-agnostic model, electrode-removal test,
   seed ensemble, and a longer schedule for the transformer head.
 - Raise the signal before enlarging the model: train on averages of repeated presentations,

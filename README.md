@@ -12,7 +12,8 @@ experiment has been run on the full public dataset: on participants and images n
 training, the CNN + contrastive baseline reaches 16.2 ± 0.3% Top-5 on a 200-image gallery
 (chance 2.5%), and replacing its head with a transformer over the EEG latent tokens does not
 improve on that (16.0 ± 1.2%). See [Results](#results) and the one-page
-[report](docs/report.md). No sealed-leaderboard submission was made.
+[report](docs/report.md). No leaderboard submission was possible: challenge registration had
+closed before this work started.
 
 ## The task, as verified
 
@@ -175,8 +176,14 @@ Not done: the GPU session ended (Colab free-tier usage limit) before the rest of
 ran. Missing are seeds 1 and 2 of the causal head and of EEGNet, the montage-agnostic
 `channel_transformer`, the seed ensembles, the channel-subset evaluation on real data, and the
 longer-schedule transformer run. Their configs and scripts are in the repository
-(`scripts/run_queue.sh`, `scripts/colab_followups.sh`). A foundation-model baseline (REVE) and
-a sealed submission were not attempted.
+(`scripts/run_queue.sh`, `scripts/colab_followups.sh`). A foundation-model baseline (REVE) was
+not attempted.
+
+No sealed submission: challenge registration had closed before this work started, so no model
+could be uploaded to the leaderboard. Every run above still produced a platform-format
+`submission.zip` that reloads to the in-memory predictions (largest difference 2e-4) and
+passes the contract check (`contract_check_ok` in each run record), and `make contract-replay`
+runs a package through the organisers' Benchopt benchmark.
 
 ## Reproducing the results
 
@@ -226,4 +233,4 @@ machine into the repository, archive `/content/runs/experiments` and run
 | M2 | CNN + contrastive baseline and EEGNet on the same split | done (EEGNet has one seed) |
 | M3 | Electrode-position-aware channel embedding; channel-subset and 63→32 transfer tests | model and evaluation code done; no real-data run yet |
 | M4 | Pooled-CNN head vs transformer over EEG latent tokens, 3 seeds | done; causal variant has one seed |
-| M5 | One-page report | done ([docs/report.md](docs/report.md)); no sealed submission |
+| M5 | One-page report; submission | report done ([docs/report.md](docs/report.md)); submission not possible (registration closed), packaging validated locally |
